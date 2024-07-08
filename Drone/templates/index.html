@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agricultural Drone Control</title>
+</head>
+<body>
+    <h1>Agricultural Drone Control</h1>
+    <p>Battery Level: {{ battery_level }}%</p>
+    <p>Current Position: {{ position }}</p>
+
+    <h2>Navigate Drone</h2>
+    <form action="/navigate" method="post">
+        <label for="x">X Coordinate:</label>
+        <input type="number" id="x" name="x" required>
+        <label for="y">Y Coordinate:</label>
+        <input type="number" id="y" name="y" required>
+        <button type="submit">Navigate</button>
+    </form>
+
+    <h2>Perform Task</h2>
+    <form action="/task" method="post">
+        <label for="task">Task:</label>
+        <select id="task" name="task">
+            <option value="plowing">Plowing</option>
+            <option value="seeding">Seeding</option>
+            <option value="harvesting">Harvesting</option>
+        </select>
+        <button type="submit">Perform Task</button>
+    </form>
+</body>
+</html>
