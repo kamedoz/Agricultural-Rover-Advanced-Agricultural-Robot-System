@@ -1,31 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Agricultural Drone Control</title>
+    <style>
+        #map {
+            width: 500px;
+            height: 500px;
+            border: 1px solid black;
+            position: relative;
+        }
+        .drone {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            position: absolute;
+            border-radius: 50%;
+        }
+        .control-panel {
+            margin-top: 20px;
+        }
+        .control-panel button {
+            margin: 5px;
+        }
+        #camera {
+            width: 500px;
+            height: 375px;
+            border: 1px solid black;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Agricultural Drone Control</h1>
+    <h1>Welcome to Agricultural Drone Control</h1>
     <p>Battery Level: {{ battery_level }}%</p>
     <p>Current Position: {{ position }}</p>
+    <p>Current Task: {{ task }}</p>
+
+    <div id="map">
+        <div class="drone" id="drone"></div>
+    </div>
 
     <h2>Navigate Drone</h2>
-    <form action="/navigate" method="post">
+    <form action="{{ url_for('navigate') }}" method="post">
         <label for="x">X Coordinate:</label>
-        <input type="number" id="x" name="x" required>
+        <input type="text" id="x" name="x">
         <label for="y">Y Coordinate:</label>
-        <input type="number" id="y" name="y" required>
+        <input type="text" id="y" name="y">
         <button type="submit">Navigate</button>
     </form>
 
+    <h2>Manual Control</h2>
+    <div class="control-panel">
+        <form action="{{ url_for('move_manual') }}" method="post">
+            <input type="hidden" name="direction" value="up">
+            <button type="submit">Up</button>
+        </form>
+        <form action="{{ url_for('move_manual') }}" method="post">
+            <input type="hidden" name="direction" value="down">
+            <button type="submit">Down</button>
+        </form>
+        <form action="{{ url_for('move_manual') }}" method="post">
+            <input type="hidden" name="direction" value="left">
+            <button type="submit">Left</button>
+        </form>
+        <form action="{{ url_for('move_manual') }}" method="post">
+            <input type="hidden" name="direction" value="right">
+            <button type="submit">Right</button>
+        </form>
+    </div>
+
     <h2>Perform Task</h2>
-    <form action="/task" method="post">
+    <form action="{{ url_for('task') }}" method="post">
         <label for="task">Task:</label>
         <select id="task" name="task">
             <option value="plowing">Plowing</option>
             <option value="seeding">Seeding</option>
             <option value="harvesting">Harvesting</option>
         </select>
-        <button type="submit">Perform Task</button>
+        <button type="submit">Start Task</button>
     </form>
+
+    <h2>Camera Feed</h2>
+    <div id="camera">
+        <img src="https://via.placeholder.com/500x375.png?text=Camera+Feed" alt="Drone Camera Feed">
+    </div>
+
+    <script>
+        function updateDronePosition(x, y) {
+            const map = document.getElementById('map');
+            const drone = document.getElementById('drone');
+            const mapWidth = map.clientWidth;
+            const mapHeight = map.clientHeight;
+            const droneSize = drone.clientWidth;
+
+            // Calculate the position of the drone on the map
+            const posX = (x / 100) * mapWidth - droneSize / 2;
+            const posY = (y / 100) * mapHeight - droneSize / 2;
+
+            // Update the drone's position
+            drone.style.left = `${posX}px`;
+            drone.style.top = `${posY}px`;
+        }
+
+        // Initial drone position update
+        const initialPosition = {{ position }};
+        updateDronePosition(initialPosition[0], initialPosition[1]);
+
+        // Update drone position dynamically
+        setInterval(() => {
+            fetch('/position')
+                .then(response => response.json())
+                .then(data => {
+                    updateDronePosition(data.x, data.y);
+                });
+        }, 1000);
+    </script>
 </body>
 </html>
