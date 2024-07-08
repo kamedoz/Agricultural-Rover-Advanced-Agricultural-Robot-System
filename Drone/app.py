@@ -1,16 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify, Response
 import time
+from typing import Optional, Tuple
 
 app = Flask(__name__)
 
 class AgriculturalDrone:
     def __init__(self):
-        self.battery_level = 100
-        self.position = (0, 0)
-        self.task = None
-        self.module = None
+        self.battery_level: int = 100
+        self.position: Tuple[int, int] = (0, 0)
+        self.task: Optional[str] = None
+        self.module: Optional[str] = None
 
-    def navigate_to(self, x, y):
+    def navigate_to(self, x: int, y: int):
         print(f"Navigating to position ({x}, {y})...")
         self.position = (x, y)
         time.sleep(2)
@@ -61,6 +62,31 @@ class AgriculturalDrone:
         else:
             self.perform_task()
 
+    def decide_task_based_on_coordinates(self, x: int, y: int):
+        if 0 <= x < 50 and 0 <= y < 50:
+            self.task = 'plowing'
+        elif 50 <= x < 100 and 0 <= y < 50:
+            self.task = 'seeding'
+        elif 0 <= x < 50 and 50 <= y < 100:
+            self.task = 'harvesting'
+        else:
+            self.task = 'plowing'  # Default task if coordinates don't match specific areas
+        print(f"Decided task {self.task} based on coordinates ({x}, {y})")
+        self.check_battery()
+
+    def move_manual(self, direction: str):
+        x, y = self.position
+        if direction == 'up':
+            y -= 1
+        elif direction == 'down':
+            y += 1
+        elif direction == 'left':
+            x -= 1
+        elif direction == 'right':
+            x += 1
+        self.position = (x, y)
+        print(f"Moved {direction}. New position: {self.position}")
+
 drone = AgriculturalDrone()
 
 @app.route('/')
@@ -72,6 +98,7 @@ def navigate():
     x = int(request.form['x'])
     y = int(request.form['y'])
     drone.navigate_to(x, y)
+    drone.decide_task_based_on_coordinates(x, y)
     return redirect(url_for('index'))
 
 @app.route('/task', methods=['POST'])
@@ -79,6 +106,16 @@ def task():
     task = request.form['task']
     drone.task = task
     drone.check_battery()
+    return redirect(url_for('index'))
+
+@app.route('/position', methods=['GET'])
+def position():
+    return jsonify(x=drone.position[0], y=drone.position[1])
+
+@app.route('/move_manual', methods=['POST'])
+def move_manual():
+    direction = request.form['direction']
+    drone.move_manual(direction)
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
